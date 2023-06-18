@@ -1,0 +1,65 @@
+version: '3.7'
+services:
+  ghostfolio:
+    image: ghostfolio/ghostfolio:latest
+    container_name: Ghostfolio
+    env_file:
+      - ./.env
+    network_mode: bridge
+    environment:
+      - HOST_OS=Unraid
+      - HOST_CONTAINERNAME=Ghostfolio
+      - REDIS_HOST=redis
+      - 'DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?connect_timeout=300&sslmode=prefer'
+      - NODE_ENV=production
+    labels:
+      - net.unraid.docker.managed=dockerman
+      - 'net.unraid.docker.webui=http://[IP]:[PORT:3333]'
+      - 'net.unraid.docker.icon=https://avatars.githubusercontent.com/u/82473144?s=200'
+    ports:
+      - '3333:3333/tcp'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: 'postgres:15'
+    container_name: postgresql15-ghostfolio
+    network_mode: bridge
+    env_file:
+      - ./.env
+    environment:
+      - TZ=Europe/Berlin
+      - HOST_OS=Unraid
+      - HOST_CONTAINERNAME=postgresql15-ghostfolio
+    labels:
+      - net.unraid.docker.managed=dockerman
+      - 'net.unraid.docker.icon=https://github.com/juusujanar/unraid-templates/raw/master/img/PostgreSQL-logo.png'
+    ports:
+      - '5432:5432/tcp'
+    volumes:
+      - "{{ ghostfolio_dir }}/postgres:/var/lib/postgresql/data:rw"
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}' ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: Redis-ghostfolio
+    network_mode: bridge
+    environment:
+      - TZ=Europe/Berlin
+      - HOST_OS=Unraid
+      - HOST_CONTAINERNAME=Redis-ghostfolio
+    labels:
+      - net.unraid.docker.managed=dockerman
+      - 'net.unraid.docker.icon=https://raw.githubusercontent.com/juusujanar/unraid-templates/master/img/Redis-logo.png'
+    healthcheck:
+      test: [ 'CMD-SHELL', 'redis-cli ping | grep PONG' ]
+      interval: 10s
+      timeout: 5s
+      retries: 5

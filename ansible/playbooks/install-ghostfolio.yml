@@ -1,0 +1,49 @@
+---
+- name: Start Docker Compose
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    ghostfolio_dir: /mnt/user/appdata/ghostfolio
+
+  tasks:
+    - name: Check .env file existence
+      stat:
+        path: templates/.env
+      register: file_info
+
+    - name: Fail if .env file does not exist
+      fail:
+        msg: ".env File does not exist. Make sure to create one based on the example .env file."
+      when: not file_info.stat.exists
+
+    - name: Create directory in appdata
+      file:
+        path: "{{ ghostfolio_dir }}"
+        state: directory
+        owner: 99
+        group: 100
+        mode: 0775
+        recurse: yes
+
+    - name: Copy .env file
+      copy:
+        src: templates/.env
+        dest: "{{ ghostfolio_dir }}/.env"
+
+    - name: Copy Docker Compose file
+      template:
+        src: templates/docker-compose.yml.j2
+        dest: "{{ ghostfolio_dir }}/docker-compose.yml"
+
+    - name: Start Docker Compose
+      command: docker-compose up -d
+      args:
+        chdir: "{{ ghostfolio_dir }}"
+
+    - name: Wait for services to be healthy
+      command: docker-compose ps -q ghostfolio | xargs docker inspect --format "{{.State.Health.Status}}"
+      register: service_health
+      until: service_health.stdout == "healthy"
+      retries: 10
+      delay: 5
