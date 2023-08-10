@@ -2,13 +2,12 @@ version: '3.7'
 services:
   ghostfolio:
     image: ghostfolio/ghostfolio:latest
-    container_name: Ghostfolio
+    container_name: ghostfolio
     env_file:
       - ./.env
-    network_mode: bridge
     environment:
       - HOST_OS=Unraid
-      - HOST_CONTAINERNAME=Ghostfolio
+      - HOST_CONTAINERNAME=ghostfolio
       - REDIS_HOST=redis
       - 'DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?connect_timeout=300&sslmode=prefer'
       - NODE_ENV=production
@@ -25,9 +24,9 @@ services:
         condition: service_healthy
 
   postgres:
-    image: 'postgres:15'
+    image: 'postgres:15-bullseye'
     container_name: postgresql15-ghostfolio
-    network_mode: bridge
+    hostname: postgres
     env_file:
       - ./.env
     environment:
@@ -49,12 +48,12 @@ services:
 
   redis:
     image: redis:alpine
-    container_name: Redis-ghostfolio
-    network_mode: bridge
+    container_name: redis-ghostfolio
+    hostname: redis
     environment:
       - TZ=Europe/Berlin
       - HOST_OS=Unraid
-      - HOST_CONTAINERNAME=Redis-ghostfolio
+      - HOST_CONTAINERNAME=redis-ghostfolio
     labels:
       - net.unraid.docker.managed=dockerman
       - 'net.unraid.docker.icon=https://raw.githubusercontent.com/juusujanar/unraid-templates/master/img/Redis-logo.png'

@@ -1,6 +1,7 @@
 ---
 - name: Start Docker Compose
-  hosts: localhost
+  hosts: 127.0.0.1
+  connection: local
   gather_facts: false
 
   vars:
@@ -17,7 +18,7 @@
         msg: ".env File does not exist. Make sure to create one based on the example .env file."
       when: not file_info.stat.exists
 
-    - name: Create directory in appdata
+    - name: Create directory ghostfolio_dir
       file:
         path: "{{ ghostfolio_dir }}"
         state: directory
@@ -36,14 +37,12 @@
         src: templates/docker-compose.yml.j2
         dest: "{{ ghostfolio_dir }}/docker-compose.yml"
 
-    - name: Start Docker Compose
-      command: docker-compose up -d
+    - name: Stop existing docker compose containers
+      command: docker-compose down --remove-orphans
       args:
         chdir: "{{ ghostfolio_dir }}"
 
-    - name: Wait for services to be healthy
-      command: docker-compose ps -q ghostfolio | xargs docker inspect --format "{{.State.Health.Status}}"
-      register: service_health
-      until: service_health.stdout == "healthy"
-      retries: 10
-      delay: 5
+    - name: Start Docker Compose
+      command: docker-compose up --wait
+      args:
+        chdir: "{{ ghostfolio_dir }}"
