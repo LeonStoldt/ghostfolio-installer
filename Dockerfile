@@ -9,7 +9,8 @@ LABEL maintainer="tech@leon-stoldt.de" \
     org.label-schema.url="https://github.com/LeonStoldt/ghostfolio-installer" \
     org.label-schema.vcs-url="https://github.com/LeonStoldt/ghostfolio-installer" \
     org.label-schema.vendor="Leon Stoldt" \
-    org.label-schema.docker.cmd="docker run --rm -v $(pwd):/ghostfolio -v /var/run/docker.sock:/var/run/docker.sock ghostfolio-installer"
+    org.label-schema.docker.cmd="docker run --rm -v $(pwd):/ghostfolio -v /var/run/docker.sock:/var/run/docker.sock ghostfolio-installer" \
+    net.unraid.docker.icon="https://avatars.githubusercontent.com/u/82473144?s=200"
 
 # Install Docker Compose
 ARG DOCKER_COMPOSE_VERSION=2.20.2

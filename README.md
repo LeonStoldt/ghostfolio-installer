@@ -1,4 +1,5 @@
-# Ansible Playbook for Ghostfolio
+# Ghostfolio-installer
+> ### Ansible Playbook for Ghostfolio
 > ![Ansible](https://img.shields.io/badge/ansible-%231A1918.svg?style=for-the-badge&logo=ansible&logoColor=white)
 > ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 > 
@@ -12,7 +13,7 @@ Run ghostfolio-installer via docker
 docker run --rm \
     -v /path/to/ghostfolio/dir:/ghostfolio \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    ghostfolio-installer
+    leonstoldt/ghostfolio-installer
 ```
 
 Run with custom variables:
@@ -27,7 +28,7 @@ docker run --rm \
     -e JWT_SECRET=jwtSecret \
     -v /path/to/ghostfolio/dir:/ghostfolio \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    ghostfolio-installer
+    leonstoldt/ghostfolio-installer
 ```
 
 ### 2. Run ansible playbook manually
