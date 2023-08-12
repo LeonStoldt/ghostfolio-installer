@@ -9,7 +9,7 @@ on:
       - main
 
 env:
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ghostfolio-installer
 
 jobs:
   build-and-push:
@@ -75,3 +75,9 @@ jobs:
         # This step uses the identity token to provision an ephemeral certificate against the sigstore community Fulcio instance.
         run: |
           echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+
+      - name: Update Docker Hub Description
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
