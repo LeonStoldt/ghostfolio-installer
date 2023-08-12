@@ -4,10 +4,10 @@ LABEL maintainer="tech@leon-stoldt.de" \
     org.label-schema.schema-version="1.0" \
     org.label-schema.build-date=$BUILD_DATE \
     org.label-schema.vcs-ref=$VCS_REF \
-    org.label-schema.name="LeonStoldt/ghostfolio-ansible-playbook" \
+    org.label-schema.name="LeonStoldt/ghostfolio-installer" \
     org.label-schema.description="Ghostfolio installer using ansible inside Docker" \
-    org.label-schema.url="https://github.com/LeonStoldt/ghostfolio-ansible-playbook" \
-    org.label-schema.vcs-url="https://github.com/LeonStoldt/ghostfolio-ansible-playbook" \
+    org.label-schema.url="https://github.com/LeonStoldt/ghostfolio-installer" \
+    org.label-schema.vcs-url="https://github.com/LeonStoldt/ghostfolio-installer" \
     org.label-schema.vendor="Leon Stoldt" \
     org.label-schema.docker.cmd="docker run --rm -v $(pwd):/ghostfolio -v /var/run/docker.sock:/var/run/docker.sock ghostfolio-installer"
 
