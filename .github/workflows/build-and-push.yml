@@ -9,7 +9,7 @@ on:
       - main
 
 env:
-  IMAGE_NAME: ghostfolio-installer
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
@@ -50,7 +50,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ${{ env.IMAGE_NAME }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
             ghcr.io/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
