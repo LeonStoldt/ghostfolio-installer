@@ -1,6 +1,7 @@
 name: Docker Build and Push
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 12 * * *'
   push:
@@ -12,6 +13,7 @@ env:
 
 jobs:
   build-and-push:
+    name: Build and push image
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -61,6 +63,7 @@ jobs:
           context: .
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
