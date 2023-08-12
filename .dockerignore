@@ -1,0 +1,2 @@
+ansible/playbooks/templates/.env
+ansible/playbooks/templates/.env.example

@@ -5,19 +5,16 @@
   gather_facts: false
 
   vars:
-    ghostfolio_dir: /mnt/user/appdata/ghostfolio
+    ghostfolio_dir: "{{ lookup('env', 'GHOSTFOLIO_DIR') }}"
+    postgres_port: "{{ lookup('env', 'POSTGRES_PORT') }}"
+    redis_password: "{{ lookup('env', 'REDIS_PW') }}"
+    postgres_db: "{{ lookup('env', 'POSTGRES_DB') }}"
+    postgres_user: "{{ lookup('env', 'POSTGRES_USER') }}"
+    postgres_password: "{{ lookup('env', 'POSTGRES_PW') }}"
+    access_token_salt: "{{ lookup('env', 'ACCESS_TOKEN_SALT') }}"
+    jtw_secret_key: "{{ lookup('env', 'JWT_SECRET') }}"
 
   tasks:
-    - name: Check .env file existence
-      stat:
-        path: templates/.env
-      register: file_info
-
-    - name: Fail if .env file does not exist
-      fail:
-        msg: ".env File does not exist. Make sure to create one based on the example .env file."
-      when: not file_info.stat.exists
-
     - name: Create directory ghostfolio_dir
       file:
         path: "{{ ghostfolio_dir }}"
@@ -27,15 +24,13 @@
         mode: 0775
         recurse: yes
 
-    - name: Copy .env file
-      copy:
-        src: templates/.env
-        dest: "{{ ghostfolio_dir }}/.env"
-
-    - name: Copy Docker Compose file
+    - name: Generate docker files
       template:
-        src: templates/docker-compose.yml.j2
-        dest: "{{ ghostfolio_dir }}/docker-compose.yml"
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      loop:
+        - { src: templates/.env.j2, dest: "{{ ghostfolio_dir }}/.env" }
+        - { src: templates/docker-compose.yml.j2, dest: "{{ ghostfolio_dir }}/docker-compose.yml" }
 
     - name: Stop existing docker compose containers
       command: docker-compose down --remove-orphans

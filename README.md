@@ -1,22 +1,50 @@
-# ghostfolio-ansible-playbook
-Ansible Playbook for setting up ghostfolio (on Unraid)
+# Ansible Playbook for Ghostfolio
+> ![Ansible](https://img.shields.io/badge/ansible-%231A1918.svg?style=for-the-badge&logo=ansible&logoColor=white)
+> ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+> 
+> Ansible Playbook for setting up [ghostfolio](https://ghostfol.io/) (e.g. on ![Unraid](https://img.shields.io/badge/unraid-%23F15A2C.svg?style=for-the-badge&logo=unraid&logoColor=white))
 
-- using install.sh:
-``` yaml
-./install.sh
+## Ways of installation
+
+### 1. Docker run (preferred)
+Run ghostfolio-installer via docker
+```shell
+docker run --rm \
+    -v /path/to/ghostfolio/dir:/ghostfolio \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    ghostfolio-installer
 ```
 
-- using install.sh with custom ghostfolio save directory:
-``` yaml
-GHOSTFOLIO_DIR=/path/to/custom/dir ./install.sh
+Run with custom variables:
+```shell
+docker run --rm \
+    -e POSTGRES_PORT=5432 \
+    -e REDIS_PW="" \
+    -e POSTGRES_DB=ghostfolio-db \
+    -e POSTGRES_USER=ghostfolio \
+    -e POSTGRES_PW=postgresPw \
+    -e ACCESS_TOKEN_SALT=accessTokenSalt \
+    -e JWT_SECRET=jwtSecret \
+    -v /path/to/ghostfolio/dir:/ghostfolio \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    ghostfolio-installer
 ```
 
-- simple ansible execution:
+### 2. Run ansible playbook manually
+> Prerequisite: clone the repository first!
+
+- call ansible playbook with variables:
 ``` yaml
-ansible-playbook ansible/playbooks/install-ghostfolio.yml
+GHOSTFOLIO_DIR=/path/to/ghostfolio/dir \
+POSTGRES_PORT=5432 \
+REDIS_PW="" \
+POSTGRES_DB=ghostfolio-db \
+POSTGRES_USER=ghostfolio \
+POSTGRES_PW=postgresPw \
+ACCESS_TOKEN_SALT=accessTokenSalt \
+JWT_SECRET=jwtSecret \
+ansible-playbook /ansible/playbooks/install-ghostfolio.yml
 ```
 
-- with changing ghostfolio save directory:
-``` yaml
-GHOSTFOLIO_DIR=/path/to/custom/dir ansible-playbook -e "ghostfolio_dir=${GHOSTFOLIO_DIR}" ansible/playbooks/install-ghostfolio.yml
-```
+# Contributions
+If you would like to improve this playbook, do not hesitate to create an issue or a pull request.

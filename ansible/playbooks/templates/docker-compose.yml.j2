@@ -37,9 +37,9 @@ services:
       - net.unraid.docker.managed=dockerman
       - 'net.unraid.docker.icon=https://github.com/juusujanar/unraid-templates/raw/master/img/PostgreSQL-logo.png'
     ports:
-      - '5432:5432/tcp'
+      - '{{ postgres_port }}:5432/tcp'
     volumes:
-      - "{{ ghostfolio_dir }}/postgres:/var/lib/postgresql/data:rw"
+      - "ghostfolio-postgres-db:/var/lib/postgresql/data:rw"
     healthcheck:
       test: [ 'CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}' ]
       interval: 10s
@@ -62,3 +62,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+volumes:
+    ghostfolio-postgres-db:
