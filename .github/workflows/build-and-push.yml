@@ -9,7 +9,7 @@ on:
       - main
 
 env:
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ghostfolio-installer
 
 jobs:
   build-and-push:
@@ -51,7 +51,7 @@ jobs:
         with:
           images: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
-            ghcr.io/${{ env.IMAGE_NAME }}
+            ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha
