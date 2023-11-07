@@ -13,7 +13,7 @@ LABEL maintainer="tech@leon-stoldt.de" \
     net.unraid.docker.icon="https://avatars.githubusercontent.com/u/82473144?s=200"
 
 # Install Docker Compose
-ARG DOCKER_COMPOSE_VERSION=2.20.2
+ARG DOCKER_COMPOSE_VERSION=2.23.0
 RUN apk --no-cache add \
         curl && \
     curl -L "https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
