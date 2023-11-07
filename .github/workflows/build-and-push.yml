@@ -12,7 +12,28 @@ env:
   IMAGE_NAME: ghostfolio-installer
 
 jobs:
+  test:
+    name: Build and push image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install wait-for-it
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wait-for-it
+
+      - name: Run integration test
+        run: |
+          make test
+
+
   build-and-push:
+    needs: [test]
     name: Build and push image
     runs-on: ubuntu-latest
     permissions:
