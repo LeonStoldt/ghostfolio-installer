@@ -5,6 +5,11 @@
 > 
 > Ansible Playbook for setting up [ghostfolio](https://ghostfol.io/) (e.g. on ![Unraid](https://img.shields.io/badge/unraid-%23F15A2C.svg?style=for-the-badge&logo=unraid&logoColor=white))
 
+## Requirements
+As the docker image is based on `willhallonline/ansible`, check compatibility first.
+Currently used docker base image version can be found in [Dockerfile](./Dockerfile) and information about OS compatibility can be found [here](https://github.com/willhallonline/docker-ansible#compatibility).
+If you need support for different/older OS, just create an issue or PR and we'll provide a new image.
+
 ## Ways of installation
 
 ### 1. Docker run (preferred)
