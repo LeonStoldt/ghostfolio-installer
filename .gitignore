@@ -1,2 +1,3 @@
 .idea
 ansible/playbooks/templates/.env
+test
