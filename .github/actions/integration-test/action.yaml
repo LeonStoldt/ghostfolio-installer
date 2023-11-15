@@ -1,0 +1,19 @@
+name: Run integration test
+description: "Runs the ansible container as integration test and checks if all containers are up and running"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install wait-for-it
+      shell: bash
+      run: |
+        sudo apt-get update
+          sudo apt-get install -y wait-for-it
+
+    - name: Run integration test
+      shell: bash
+      run: |
+        make test

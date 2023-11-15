@@ -1,0 +1,12 @@
+name: Post-run
+description: "Tasks to run after pipeline is done"
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: Update Docker Hub Description
+      uses: peter-evans/dockerhub-description@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}

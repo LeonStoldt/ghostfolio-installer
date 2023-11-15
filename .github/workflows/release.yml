@@ -1,0 +1,56 @@
+name: Release Docker Image
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 9 * * 5'
+  push:
+    branches:
+      - main
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: ./.github/actions/integration-test
+
+  build-and-push:
+    needs: [integration-test]
+    name: Build and push image
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        fail-fast: false
+        include:
+          - platform: amd64
+            base_image_tag: 2.15-alpine-3.18
+          - platform: arm64
+            ansible_image_tag: alpine
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge with sigstore/fulcio when running outside of PRs.
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: ./.github/actions/build-and-push
+        with:
+          platform: ${{ matrix.platform }}
+          ansible_image_tag: ${{ matrix.ansible_image_tag }}
+
+  post-run:
+    needs: [ build-and-push ]
+    name: Post-run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: ./.github/actions/post-run
