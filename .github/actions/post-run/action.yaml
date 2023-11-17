@@ -1,6 +1,13 @@
 name: Post-run
 description: "Tasks to run after pipeline is done"
 
+inputs:
+  digests:
+    description: "Digests from previous build step"
+    required: false
+  tags:
+    description: "Tags from previous build step"
+    required: false
 
 runs:
   using: "composite"
@@ -10,3 +17,23 @@ runs:
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Set job summary
+      shell: bash
+      run: |
+        cat >> $GITHUB_STEP_SUMMARY <<EOB
+        # Release Report
+        ## Registries
+        - **Image Name:** ghostfolio-installer
+        - [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](docker_hub_url)
+        - ![GitHub](https://img.shields.io/badge/ghcr.io-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)(ghcr_io_url)
+        
+        ## Image Digests
+        > ${{ inputs.tags }}"
+        
+        ## Image Digests
+        > ${{ inputs.digests }}"
+        
+        [docker_hub_url]: https://hub.docker.com/r/${{ github.repository_owner }}/${{ github.repository }}
+        [ghcr_io_url]: ${{ github.server_url}}/${{ github.repository_owner }}/${{ github.repository }}/pkgs/container/${{ github.repository }}
+        EOB

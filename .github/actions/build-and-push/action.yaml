@@ -11,6 +11,14 @@ inputs:
     default: "alpine"
     required: true
 
+outputs:
+  digests:
+    description: "Image digests"
+    value: ${{ steps.build-and-push.outputs.digest }}
+  tags:
+    description: "Image tags"
+    value: ${{ steps.meta.outputs.tags }}
+
 runs:
   using: "composite"
   steps:
@@ -76,3 +84,9 @@ runs:
       # This step uses the identity token to provision an ephemeral certificate against the sigstore community Fulcio instance.
       run: |
         echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+
+    - name: Set output variables
+      shell: bash
+      run: |
+        echo "digests=${{ steps.build-and-push.outputs.digest }}" >> $GITHUB_OUTPUT
+        echo "tags=${{ steps.meta.outputs.tags }}" >> $GITHUB_OUTPUT
