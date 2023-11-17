@@ -38,6 +38,6 @@
         chdir: "{{ ghostfolio_dir }}"
 
     - name: Start Docker Compose
-      command: docker-compose up --wait
+      command: docker-compose up -d
       args:
         chdir: "{{ ghostfolio_dir }}"

@@ -14,8 +14,18 @@ define wait_for_container
 	done
 endef
 
+define docker-build
+	docker buildx build --pull \
+		--build-arg ANSIBLE_CORE_TAG=$(1) \
+		--platform $(2) \
+		-t ghostfolio-installer .
+endef
+
 build:
-	docker build -t ghostfolio-installer .
+	$(call docker-build,"2.15-alpine-3.18","linux/amd64")
+
+build-arm:
+	$(call docker-build,"alpine","linux/arm64")
 
 run: build
 	 docker run --rm\

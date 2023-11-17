@@ -1,0 +1,92 @@
+name: Build and push image
+description: "Builds docker image and pushes it to registry"
+
+inputs:
+  platform:
+    description: "Platform for docker build"
+    default: "amd64"
+    required: true
+  ansible_image_tag:
+    description: "Image tag of ansible base image"
+    default: "alpine"
+    required: true
+
+outputs:
+  digests:
+    description: "Image digests"
+    value: ${{ steps.build-and-push.outputs.digest }}
+  tags:
+    description: "Image tags"
+    value: ${{ steps.meta.outputs.tags }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # Install the cosign tool except on PR https://github.com/sigstore/cosign-installer
+    - name: Install cosign
+      uses: sigstore/cosign-installer@v3.2.0
+
+    - name: Set up QEMU
+      if: ${{ inputs.platform != 'amd64' }}
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: ${{ inputs.platform }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: |
+          ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}
+          ghcr.io/${{ github.repository }}
+        tags: |
+          type=raw,value=latest,enable=${{ is_default_branch && inputs.platform == 'amd64' }}
+          type=raw,value=latest,suffix={{inputs.platform}},enable=${{ is_default_branch && inputs.platform != 'amd64' }}
+          type=sha
+
+    - name: Build and push Docker image
+      id: build-and-push
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/${{ inputs.platform }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        push: true
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Sign the published Docker image
+      shell: bash
+      env:
+        # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable
+        TAGS: ${{ steps.meta.outputs.tags }}
+        DIGEST: ${{ steps.build-and-push.outputs.digest }}
+      # This step uses the identity token to provision an ephemeral certificate against the sigstore community Fulcio instance.
+      run: |
+        echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+
+    - name: Set output variables
+      shell: bash
+      run: |
+        echo "digests=${{ steps.build-and-push.outputs.digest }}" >> $GITHUB_OUTPUT
+        echo "tags=${{ steps.meta.outputs.tags }}" >> $GITHUB_OUTPUT
