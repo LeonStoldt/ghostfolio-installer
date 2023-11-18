@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+env:
+  dockerhub_username: leonstoldt
+  image_name: ghostfolio-installer
+
 jobs:
   integration-test:
     runs-on: ubuntu-latest
@@ -24,21 +28,23 @@ jobs:
     name: Build and push image
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        fail-fast: false
         include:
-          - platform: amd64
-            base_image_tag: 2.15-alpine-3.18
-          - platform: arm64
-            ansible_image_tag: alpine
+          - platform: "amd64"
+            ansible_image_tag: "2.15-alpine-3.18"
+          - platform: "arm64"
+            ansible_image_tag: "alpine"
     permissions:
       contents: read
       packages: write
       # This is used to complete the identity challenge with sigstore/fulcio when running outside of PRs.
       id-token: write
+    # https://github.com/orgs/community/discussions/17245
     outputs:
       digests: ${{ steps.build.outputs.digests }}
-      tags: ${{ steps.build.outputs.tags }}
+      tags_amd64: ${{ steps.build.outputs.tags_amd64 }}
+      tags_arm64: ${{ steps.build.outputs.tags_arm64 }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -48,6 +54,8 @@ jobs:
         with:
           platform: ${{ matrix.platform }}
           ansible_image_tag: ${{ matrix.ansible_image_tag }}
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   post-run:
     needs: [ release ]
@@ -59,5 +67,7 @@ jobs:
 
       - uses: ./.github/actions/post-run
         with:
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
           digests: ${{ needs.release.outputs.digests }}
-          tags: ${{ needs.release.outputs.tags }}
+          tags_amd64: ${{ needs.release.outputs.tags_amd64 }}
+          tags_arm64: ${{ needs.release.outputs.tags_arm64 }}

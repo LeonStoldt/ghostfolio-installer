@@ -10,14 +10,23 @@ inputs:
     description: "Image tag of ansible base image"
     default: "alpine"
     required: true
+  dockerhub_token:
+    description: "Docker Hub Token"
+    required: true
+  github_token:
+    description: "Github Token"
+    required: true
 
 outputs:
   digests:
     description: "Image digests"
     value: ${{ steps.build-and-push.outputs.digest }}
-  tags:
-    description: "Image tags"
-    value: ${{ steps.meta.outputs.tags }}
+  tags_amd64:
+    description: "Image tags for amd64"
+    value: ${{ inputs.platform == 'amd64' && format('{0}', steps.meta.outputs.tags) || '' }}
+  tags_arm64:
+    description: "Image tags for arm64"
+    value: ${{ inputs.platform == 'arm64' && format('{0}', steps.meta.outputs.tags) || '' }}
 
 runs:
   using: "composite"
@@ -41,26 +50,26 @@ runs:
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        username: ${{ env.dockerhub_username }}
+        password: ${{ inputs.dockerhub_token }}
 
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ inputs.github_token }}
 
     - name: Extract metadata (tags, labels) for Docker
       id: meta
       uses: docker/metadata-action@v5
       with:
         images: |
-          ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}
+          ${{ env.dockerhub_username }}/${{ env.image_name }}
           ghcr.io/${{ github.repository }}
         tags: |
-          type=raw,value=latest,enable=${{ is_default_branch && inputs.platform == 'amd64' }}
-          type=raw,value=latest,suffix={{inputs.platform}},enable=${{ is_default_branch && inputs.platform != 'amd64' }}
+          type=raw,value=latest,enable=${{ github.ref_name == 'main' && inputs.platform == 'amd64' }}
+          type=raw,value=latest,suffix=_${{inputs.platform}},enable=${{ github.ref_name == 'main' && inputs.platform != 'amd64' }}
           type=sha
 
     - name: Build and push Docker image
@@ -68,6 +77,8 @@ runs:
       uses: docker/build-push-action@v5
       with:
         context: .
+        build-args: |
+          ANSIBLE_CORE_TAG=${{ inputs.ansible_image_tag }}
         platforms: linux/${{ inputs.platform }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -89,4 +100,8 @@ runs:
       shell: bash
       run: |
         echo "digests=${{ steps.build-and-push.outputs.digest }}" >> $GITHUB_OUTPUT
-        echo "tags=${{ steps.meta.outputs.tags }}" >> $GITHUB_OUTPUT
+        {
+          echo 'tags_${{ inputs.platform }}<<EOF'
+          echo "${{ steps.meta.outputs.tags }}"
+          echo EOF
+        } >> "$GITHUB_OUTPUT"

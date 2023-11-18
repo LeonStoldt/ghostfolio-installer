@@ -2,11 +2,17 @@ name: Post-run
 description: "Tasks to run after pipeline is done"
 
 inputs:
+  dockerhub_token:
+    description: "Docker Hub Token"
+    required: true
   digests:
     description: "Digests from previous build step"
     required: false
-  tags:
-    description: "Tags from previous build step"
+  tags_amd64:
+    description: "Tags from previous build step [matrix.amd64]"
+    required: false
+  tags_arm64:
+    description: "Tags from previous build step [matrix.arm64]"
     required: false
 
 runs:
@@ -15,8 +21,8 @@ runs:
     - name: Update Docker Hub Description
       uses: peter-evans/dockerhub-description@v3
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        username: ${{ env.dockerhub_username }}
+        password: ${{ inputs.dockerhub_token }}
 
     - name: Set job summary
       shell: bash
@@ -24,16 +30,22 @@ runs:
         cat >> $GITHUB_STEP_SUMMARY <<EOB
         # Release Report
         ## Registries
-        - **Image Name:** ghostfolio-installer
-        - [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](docker_hub_url)
-        - ![GitHub](https://img.shields.io/badge/ghcr.io-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)(ghcr_io_url)
+        - [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)][docker_hub_url]
+        - [![GitHub](https://img.shields.io/badge/ghcr.io-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)][ghcr_io_url]
+        
+        ## Image Name
+        > ${{ env.dockerhub_username }}/${{ env.image_name }}
+        
+        ## Image Tags
+        > **amd64**
+        > ${{ inputs.tags_amd64 }}
+        >
+        > **arm64**
+        > ${{ inputs.tags_arm64 }}
         
         ## Image Digests
-        > ${{ inputs.tags }}"
+        > ${{ inputs.digests }}
         
-        ## Image Digests
-        > ${{ inputs.digests }}"
-        
-        [docker_hub_url]: https://hub.docker.com/r/${{ github.repository_owner }}/${{ github.repository }}
-        [ghcr_io_url]: ${{ github.server_url}}/${{ github.repository_owner }}/${{ github.repository }}/pkgs/container/${{ github.repository }}
+        [docker_hub_url]: https://hub.docker.com/r/${{ env.dockerhub_username }}/${{ env.image_name }}
+        [ghcr_io_url]: ${{ github.server_url}}/${{ github.repository }}/pkgs/container/${{ env.image_name }}
         EOB
