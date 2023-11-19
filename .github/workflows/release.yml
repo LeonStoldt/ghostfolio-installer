@@ -36,7 +36,7 @@ jobs:
           - platform: "arm64"
             ansible_image_tag: "alpine"
     permissions:
-      contents: read
+      contents: write
       packages: write
       # This is used to complete the identity challenge with sigstore/fulcio when running outside of PRs.
       id-token: write

@@ -72,6 +72,31 @@ runs:
           type=raw,value=latest,suffix=_${{inputs.platform}},enable=${{ github.ref_name == 'main' && inputs.platform != 'amd64' }}
           type=sha
 
+    - name: Check whether to push or not
+      shell: bash
+      run: |
+        SHA_FILE_LOCATION=./.github/ansible-docker-digests/${{ inputs.platform }}.sha
+        
+        CURRENT_SHA=$(docker manifest inspect willhallonline/ansible:${{ inputs.ansible_image_tag }} \
+        | jq -r 'if .manifests then .manifests[] | select(.platform.architecture == "${{ inputs.platform }}").digest else .config.digest end')
+        
+        if [[ $(cat "${SHA_FILE_LOCATION}") == "${CURRENT_SHA}" ]]; then
+          echo "pushImage=false" >> $GITHUB_ENV
+        else
+          echo "pushImage=true" >> $GITHUB_ENV
+          echo "${CURRENT_SHA}" > "${SHA_FILE_LOCATION}"
+        fi
+
+    - name: Commit updated sha files if present
+      if: ${{ env.pushImage == 'true' }}
+      uses: stefanzweifel/git-auto-commit-action@v5
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        commit_message: Automated Base Image Digest Update
+        commit_options: '--no-verify --signoff'
+        file_pattern: './.github/ansible-docker-digests/*.sha'
+
     - name: Build and push Docker image
       id: build-and-push
       uses: docker/build-push-action@v5
@@ -82,11 +107,12 @@ runs:
         platforms: linux/${{ inputs.platform }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        push: true
+        push: ${{ env.pushImage }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
     - name: Sign the published Docker image
+      if: ${{ env.pushImage == 'true' }}
       shell: bash
       env:
         # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable
