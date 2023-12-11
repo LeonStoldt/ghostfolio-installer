@@ -36,7 +36,7 @@ runs:
 
     # Install the cosign tool except on PR https://github.com/sigstore/cosign-installer
     - name: Install cosign
-      uses: sigstore/cosign-installer@v3.2.0
+      uses: sigstore/cosign-installer@v3.3.0
 
     - name: Set up QEMU
       if: ${{ inputs.platform != 'amd64' }}
