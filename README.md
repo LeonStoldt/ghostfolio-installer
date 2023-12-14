@@ -7,7 +7,7 @@
 
 ## Requirements
 As the docker image is based on `willhallonline/ansible`, check compatibility first.
-Currently used docker base image version can be found in [Dockerfile](./Dockerfile) and information about OS compatibility can be found [here](https://github.com/willhallonline/docker-ansible#compatibility).
+Currently used docker base image version can be found in the [release workflow](.github/workflows/release.yml) and information about OS compatibility can be found [here](https://github.com/willhallonline/docker-ansible#compatibility).
 If you need support for different/older OS, just create an issue or PR and we'll provide a new image.
 
 ## Ways of installation
