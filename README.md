@@ -1,7 +1,8 @@
 # Ghostfolio-installer
 > ### Ansible Playbook for Ghostfolio
 > ![Ansible](https://img.shields.io/badge/ansible-%231A1918.svg?style=for-the-badge&logo=ansible&logoColor=white)
-> ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+> [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/leonstoldt/ghostfolio-installer)
+> [![GitHub](https://img.shields.io/badge/ghcr.io-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/LeonStoldt/ghostfolio-installer/pkgs/container/ghostfolio-installer)
 > 
 > Ansible Playbook for setting up [ghostfolio](https://ghostfol.io/) (e.g. on ![Unraid](https://img.shields.io/badge/unraid-%23F15A2C.svg?style=for-the-badge&logo=unraid&logoColor=white))
 
