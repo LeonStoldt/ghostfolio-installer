@@ -37,6 +37,11 @@
       args:
         chdir: "{{ ghostfolio_dir }}"
 
+    - name: Pull Docker Compose
+      command: docker-compose pull
+      args:
+        chdir: "{{ ghostfolio_dir }}"
+
     - name: Start Docker Compose
       command: docker-compose up -d
       args:
