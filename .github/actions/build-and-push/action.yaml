@@ -80,11 +80,11 @@ runs:
         CURRENT_SHA=$(docker manifest inspect willhallonline/ansible:${{ inputs.ansible_image_tag }} \
         | jq -r 'if .manifests then .manifests[] | select(.platform.architecture == "${{ inputs.platform }}").digest else .config.digest end')
         
-        if [[ $(cat "${SHA_FILE_LOCATION}") == "${CURRENT_SHA}" ]]; then
-          echo "pushImage=false" >> $GITHUB_ENV
-        else
+        if [[ $(cat "${SHA_FILE_LOCATION}") != "${CURRENT_SHA}" ]] || [[ ${{ github.event_name }} == 'push' ]]; then
           echo "pushImage=true" >> $GITHUB_ENV
           echo "${CURRENT_SHA}" > "${SHA_FILE_LOCATION}"
+        else
+          echo "pushImage=false" >> $GITHUB_ENV
         fi
 
     - name: Commit updated sha files if present
