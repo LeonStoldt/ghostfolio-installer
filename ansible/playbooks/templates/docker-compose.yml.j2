@@ -3,6 +3,7 @@ services:
   ghostfolio:
     image: ghostfolio/ghostfolio:latest
     container_name: ghostfolio
+    init: true
     env_file:
       - ./.env
     environment:
