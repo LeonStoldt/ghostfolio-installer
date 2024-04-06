@@ -30,22 +30,22 @@ services:
       retries: 5
 
   postgres:
-    image: 'postgres:15-bullseye'
-    container_name: postgresql15-ghostfolio
+    image: 'postgres:{{ postgres_version }}-alpine'
+    container_name: postgresql{{ postgres_version }}-ghostfolio
     hostname: postgres
     env_file:
       - ./.env
     environment:
       - TZ=Europe/Berlin
       - HOST_OS=Unraid
-      - HOST_CONTAINERNAME=postgresql15-ghostfolio
+      - HOST_CONTAINERNAME=postgresql{{ postgres_version }}-ghostfolio
     labels:
       - net.unraid.docker.managed=dockerman
       - 'net.unraid.docker.icon=https://github.com/juusujanar/unraid-templates/raw/master/img/PostgreSQL-logo.png'
     ports:
       - '{{ postgres_port }}:5432/tcp'
     volumes:
-      - "ghostfolio-postgres-db:/var/lib/postgresql/data:rw"
+      - "ghostfolio-postgres{{ postgres_version }}-db:/var/lib/postgresql/data:rw"
     healthcheck:
       test: [ 'CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}' ]
       interval: 10s
@@ -70,4 +70,4 @@ services:
       retries: 5
 
 volumes:
-    ghostfolio-postgres-db:
+    ghostfolio-postgres{{ postgres_version }}-db:

@@ -8,6 +8,7 @@
     ghostfolio_dir: "{{ lookup('env', 'GHOSTFOLIO_DIR') }}"
     postgres_port: "{{ lookup('env', 'POSTGRES_PORT') }}"
     redis_password: "{{ lookup('env', 'REDIS_PW') }}"
+    postgres_version: "16"
     postgres_db: "{{ lookup('env', 'POSTGRES_DB') }}"
     postgres_user: "{{ lookup('env', 'POSTGRES_USER') }}"
     postgres_password: "{{ lookup('env', 'POSTGRES_PW') }}"
