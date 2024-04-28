@@ -128,7 +128,7 @@ runs:
         ## Image Digests
         > ${{ inputs.digests }}
         
-        Changes in this Release: (\`${{ env.PREVIOUS_TAG }}..${{ env.RELEASE_TAG }}\`)
+        ## Changes in this Release: (\`${{ env.PREVIOUS_TAG }}..${{ env.RELEASE_TAG }}\`)
         EOB
         
         if [ -z "${{ env.PREVIOUS_TAG }}" ]; then
