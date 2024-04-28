@@ -1,0 +1,149 @@
+name: GitHub Release
+description: "Creates a GitHub Release for new changes"
+
+inputs:
+  github_token:
+    description: "Github Token"
+    required: true
+  tags_amd64:
+    description: "Ansible Image Tag for Amd64"
+    required: true
+  tags_arm64:
+    description: "Ansible Image Tag for Arm64"
+    required: true
+  digests:
+    description: "Ansible Image Tag for Arm64"
+    required: true
+
+outputs:
+  release_tag:
+    description: "GitHub Release Tag"
+    value: ${{ steps.build-and-push.outputs.release_tag }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get previous tag
+      id: get_previous_tag
+      shell: bash
+      run: |
+        git pull
+        git fetch --tags
+        echo "previous_tag=$(git tag -l --sort=-v:refname | head -n 1)" >> "${GITHUB_OUTPUT}"
+        echo "PREVIOUS_TAG=$(git tag -l --sort=-v:refname | head -n 1)" >> "${GITHUB_ENV}"
+
+    - name: Set RELEASE_VERSION variable
+      shell: bash
+      run: |
+        CURRENT_GHOSTFOLIO_VERSION=$(curl -s https://api.github.com/repos/ghostfolio/ghostfolio/releases/latest | jq -r '.tag_name')
+        GHOSTFOLIO_VERSION_FILE_LOCATION=./.ghostfolio/.version
+        VERSION_COUNTER=0
+        
+        if [[ "${LATEST_RELEASE_VERSION}" == "null" ]]; then
+          echo "No previous release present. Initializing based on latest ghostfolio version."
+          echo "${CURRENT_GHOSTFOLIO_VERSION}" > "${GHOSTFOLIO_VERSION_FILE_LOCATION}"
+          echo "updatedGhostfolioVersion=true" >> "${GITHUB_ENV}"
+        else
+          LATEST_RELEASE_VERSION_BASE=$(echo "${{ env.PREVIOUS_TAG }}" | cut -d '_' -f1)
+          LATEST_RELEASE_VERSION_COUNTER=$(echo "${{ env.PREVIOUS_TAG }}" | cut -d '_' -f2)
+          
+          if [[ "${LATEST_RELEASE_VERSION_BASE}" != "${CURRENT_GHOSTFOLIO_VERSION}" ]]; then
+            echo "Updating ghostfolio version from $(cat ${GHOSTFOLIO_VERSION_FILE_LOCATION}) to ${CURRENT_GHOSTFOLIO_VERSION}"
+            echo "${CURRENT_GHOSTFOLIO_VERSION}" > "${GHOSTFOLIO_VERSION_FILE_LOCATION}"
+            echo "updatedGhostfolioVersion=true" >> "${GITHUB_ENV}"
+          else
+            VERSION_COUNTER=$((LATEST_RELEASE_VERSION_COUNTER + 1))
+            echo "updatedGhostfolioVersion=false" >> "${GITHUB_ENV}"
+          fi
+        fi
+        
+        RELEASE_TAG="${CURRENT_GHOSTFOLIO_VERSION}_${VERSION_COUNTER}"
+        echo "RELEASE_TAG=$RELEASE_TAG" >> "${GITHUB_ENV}"
+        echo "release_tag=$RELEASE_TAG" >> "${GITHUB_OUTPUT}"
+
+    - name: Commit updated ghostfolio version if changed
+      if: ${{ env.updatedGhostfolioVersion == 'true' }}
+      uses: stefanzweifel/git-auto-commit-action@v5
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      with:
+        commit_message: Automated Ghostfolio Version Update
+        commit_options: '--no-verify --signoff'
+        file_pattern: './.ghostfolio/.version'
+
+    - name: Check if tag already exists
+      shell: bash
+      run: |
+        if [[ $(git tag -l ${{ env.RELEASE_TAG }}) ]]; then
+          echo "::error::Tag '${{ env.RELEASE_TAG }}' already exists."
+          exit 1
+        else
+          git pull
+          git fetch --tags
+          git tag ${{ env.RELEASE_TAG }} HEAD
+          git push origin ${{ env.RELEASE_TAG }}
+        fi
+
+    - name: Update major version tag
+      shell: bash
+      run: |
+        MAJOR_TAG="$(echo "${{ env.RELEASE_TAG }}" | cut -d '_' -f1)"
+        if [[ $(git tag -l ${MAJOR_TAG}) ]]; then
+          git tag -d "${MAJOR_TAG}"
+          git push origin ":refs/tags/${MAJOR_TAG}" || true # Delete remote tag if it exists
+        fi
+        git tag ${MAJOR_TAG} HEAD
+        git push origin "${MAJOR_TAG}"
+
+    - name: Create Release Changelog
+      shell: bash
+      run: |
+        cat > release-changelog.md <<EOB
+        ## Docker images registries
+        - [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/${{ env.dockerhub_username }}/${{ env.image_name }})
+        - [![GitHub](https://img.shields.io/badge/ghcr.io-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](${{ github.server_url}}/${{ github.repository }}/pkgs/container/${{ env.image_name }})
+        
+        ## Image Name
+        > ${{ env.dockerhub_username }}/${{ env.image_name }}
+        
+        ## Base Ansible Versions
+        > **amd64**
+        > ${{ env.ansible_image_tag_amd64 }}
+        >
+        > **arm64**
+        > ${{ env.ansible_image_tag_arm64 }}
+        
+        ## Image Tags
+        > **amd64**
+        > ${{ inputs.tags_amd64 }}
+        >
+        > **arm64**
+        > ${{ inputs.tags_arm64 }}
+        
+        ## Image Digests
+        > ${{ inputs.digests }}
+        
+        Changes in this Release: (\`${{ env.PREVIOUS_TAG }}..${{ env.RELEASE_TAG }}\`)
+        EOB
+        
+        if [ -z "${{ env.PREVIOUS_TAG }}" ]; then
+          # First release
+          git log --pretty=format:'- %s' >> release-changelog.md
+        else
+          # Regular release
+          git log ${{ env.PREVIOUS_TAG }}..${{ env.RELEASE_TAG }} --pretty=format:'- %s' >> release-changelog.md
+        fi
+        
+    - name: Create GitHub Release
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
+        gh release create ${{ env.RELEASE_TAG }} \
+          --title "${{ env.RELEASE_TAG }}" \
+          --notes-file release-changelog.md

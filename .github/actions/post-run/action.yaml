@@ -5,15 +5,9 @@ inputs:
   dockerhub_token:
     description: "Docker Hub Token"
     required: true
-  digests:
-    description: "Digests from previous build step"
-    required: false
-  tags_amd64:
-    description: "Tags from previous build step [matrix.amd64]"
-    required: false
-  tags_arm64:
-    description: "Tags from previous build step [matrix.arm64]"
-    required: false
+  release_tag:
+    description: "Release Tag"
+    required: true
 
 runs:
   using: "composite"
@@ -36,16 +30,10 @@ runs:
         ## Image Name
         > ${{ env.dockerhub_username }}/${{ env.image_name }}
         
-        ## Image Tags
-        > **amd64**
-        > ${{ inputs.tags_amd64 }}
-        >
-        > **arm64**
-        > ${{ inputs.tags_arm64 }}
-        
-        ## Image Digests
-        > ${{ inputs.digests }}
+        ## Latest Release
+        [![GitHub](https://img.shields.io/badge/GitHub_Releases-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)][gh_release_url]
         
         [docker_hub_url]: https://hub.docker.com/r/${{ env.dockerhub_username }}/${{ env.image_name }}
         [ghcr_io_url]: ${{ github.server_url}}/${{ github.repository }}/pkgs/container/${{ env.image_name }}
+        [gh_release_url]: ${{ github.server_url}}/${{ github.repository }}/releases/latest
         EOB

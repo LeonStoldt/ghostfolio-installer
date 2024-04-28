@@ -24,9 +24,15 @@ outputs:
   tags_amd64:
     description: "Image tags for amd64"
     value: ${{ inputs.platform == 'amd64' && format('{0}', steps.meta.outputs.tags) || '' }}
+  publish_amd64:
+    description: "Whether amd64 image was published or not"
+    value: ${{ inputs.platform == 'amd64' && format('{0}', steps.check_push.outputs.pushImage) || 'false' }}
   tags_arm64:
     description: "Image tags for arm64"
     value: ${{ inputs.platform == 'arm64' && format('{0}', steps.meta.outputs.tags) || '' }}
+  publish_arm64:
+    description: "Whether arm64 image was published or not"
+    value: ${{ inputs.platform == 'arm64' && format('{0}', steps.check_push.outputs.pushImage) || 'false' }}
 
 runs:
   using: "composite"
@@ -34,7 +40,6 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Install the cosign tool except on PR https://github.com/sigstore/cosign-installer
     - name: Install cosign
       uses: sigstore/cosign-installer@v3.5.0
 
@@ -73,19 +78,40 @@ runs:
           type=sha
 
     - name: Check whether to push or not
+      id: check_push
       shell: bash
       run: |
-        SHA_FILE_LOCATION=./.github/ansible-docker-digests/${{ inputs.platform }}.sha
+        ANSIBLE_DOCKER_SHA_FILE_LOCATION=./.github/ansible-docker-digests/${{ inputs.platform }}.sha
+        GHOSTFOLIO_DOCKER_COMPOSE_SHA_FILE_LOCATION=./.ghostfolio/.docker-compose.sha
         
-        CURRENT_SHA=$(docker manifest inspect willhallonline/ansible:${{ inputs.ansible_image_tag }} \
+        CURRENT_SHA_ANSIBLE_DOCKER=$(docker manifest inspect willhallonline/ansible:${{ inputs.ansible_image_tag }} \
         | jq -r 'if .manifests then .manifests[] | select(.platform.architecture == "${{ inputs.platform }}").digest else .config.digest end')
         
-        if [[ $(cat "${SHA_FILE_LOCATION}") != "${CURRENT_SHA}" ]] || [[ ${{ github.event_name }} == 'push' ]]; then
-          echo "pushImage=true" >> $GITHUB_ENV
-          echo "${CURRENT_SHA}" > "${SHA_FILE_LOCATION}"
+        CURRENT_SHA_GHOSTFOLIO_DOCKER_COMPOSE=$(curl -s https://raw.githubusercontent.com/ghostfolio/ghostfolio/main/docker/docker-compose.yml | sha1sum)
+        
+        # Custom changes bypass sha checks
+        if [[ ${{ github.event_name }} == 'push' ]]; then
+          echo "pushImage=true" >> "${GITHUB_ENV}"
+          echo "pushImage=true" >> "${GITHUB_OUTPUT}"
+          echo "${CURRENT_SHA_ANSIBLE_DOCKER}" > "${ANSIBLE_DOCKER_SHA_FILE_LOCATION}"
         else
-          echo "pushImage=false" >> $GITHUB_ENV
+          #scheduled
+          if [[ $(cat "${GHOSTFOLIO_DOCKER_COMPOSE_SHA_FILE_LOCATION}") != "${CURRENT_SHA_GHOSTFOLIO_DOCKER_COMPOSE}" ]]; then
+            echo "pushImage=false" >> "${GITHUB_ENV}"
+            echo "pushImage=false" >> "${GITHUB_OUTPUT}"
+            echo "::error Remote ghostfolio docker compose file has changed. Manual review required."
+          else
+            if [[ $(cat "${ANSIBLE_DOCKER_SHA_FILE_LOCATION}") != "${CURRENT_SHA_ANSIBLE_DOCKER}" ]]; then
+              echo "pushImage=true" >> "${GITHUB_ENV}"
+              echo "pushImage=true" >> "${GITHUB_OUTPUT}"
+              echo "${CURRENT_SHA_ANSIBLE_DOCKER}" > "${ANSIBLE_DOCKER_SHA_FILE_LOCATION}"
+            else
+              echo "pushImage=false" >> "${GITHUB_ENV}"
+              echo "pushImage=false" >> "${GITHUB_OUTPUT}"
+            fi
+          fi
         fi
+        echo "::notice PushImage is ${{ env.pushImage }} for ${{ inputs.platform }}"
 
     - name: Commit updated sha files if present
       if: ${{ env.pushImage == 'true' }}
@@ -125,9 +151,9 @@ runs:
     - name: Set output variables
       shell: bash
       run: |
-        echo "digests=${{ steps.build-and-push.outputs.digest }}" >> $GITHUB_OUTPUT
+        echo "digests=${{ steps.build-and-push.outputs.digest }}" >> "${GITHUB_OUTPUT}"
         {
           echo 'tags_${{ inputs.platform }}<<EOF'
           echo "${{ steps.meta.outputs.tags }}"
           echo EOF
-        } >> "$GITHUB_OUTPUT"
+        } >> "${GITHUB_OUTPUT}"

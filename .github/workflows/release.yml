@@ -1,4 +1,4 @@
-name: Release Docker Image
+name: Release New Version
 
 on:
   workflow_dispatch:
@@ -11,9 +11,12 @@ on:
 env:
   dockerhub_username: leonstoldt
   image_name: ghostfolio-installer
+  ansible_image_tag_amd64: 2.16-alpine-3.19 # renovate: datasource=docker depName=willhallonline/ansible versioning=docker
+  ansible_image_tag_arm64: alpine
 
 jobs:
   integration-test:
+    name: Run Integration Tests
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -25,9 +28,10 @@ jobs:
 
   release:
     needs: [integration-test]
-    name: Build and push image
+    name: Build and push docker image
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 1
       fail-fast: false
       matrix:
         include:
@@ -44,10 +48,16 @@ jobs:
     outputs:
       digests: ${{ steps.build.outputs.digests }}
       tags_amd64: ${{ steps.build.outputs.tags_amd64 }}
+      publish_amd64: ${{ steps.build.outputs.publish_amd64 }}
       tags_arm64: ${{ steps.build.outputs.tags_arm64 }}
+      publish_arm64: ${{ steps.build.outputs.publish_arm64 }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Pull latest changes
+        shell: bash
+        run: git pull
 
       - uses: ./.github/actions/build-and-push
         id: build
@@ -57,8 +67,26 @@ jobs:
           dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-  post-run:
+  gh-release:
     needs: [ release ]
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: ./.github/actions/gh-release
+        if: ${{ needs.release.outputs.publish_amd64 == 'true' || needs.release.outputs.publish_arm64 == 'true' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tags_amd64: ${{ needs.release.outputs.tags_amd64 }}
+          tags_arm64: ${{ needs.release.outputs.tags_arm64 }}
+          digests: ${{ needs.release.outputs.digests }}
+
+  post-run:
+    needs: [ gh-release ]
     name: Post-run
     runs-on: ubuntu-latest
     steps:
@@ -68,6 +96,4 @@ jobs:
       - uses: ./.github/actions/post-run
         with:
           dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
-          digests: ${{ needs.release.outputs.digests }}
-          tags_amd64: ${{ needs.release.outputs.tags_amd64 }}
-          tags_arm64: ${{ needs.release.outputs.tags_arm64 }}
+          release_tag: ${{ needs.gh-release.outputs.release_tag }}
