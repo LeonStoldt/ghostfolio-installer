@@ -14,6 +14,8 @@ inputs:
   digests:
     description: "Ansible Image Tag for Arm64"
     required: true
+  released_docker:
+    description: "If new docker container was published"
 
 outputs:
   release_tag:
@@ -43,6 +45,7 @@ runs:
         CURRENT_GHOSTFOLIO_VERSION=$(curl -s https://api.github.com/repos/ghostfolio/ghostfolio/releases/latest | jq -r '.tag_name')
         GHOSTFOLIO_VERSION_FILE_LOCATION=./.ghostfolio/.version
         VERSION_COUNTER=0
+        LATEST_RELEASE_VERSION=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name')
         
         if [[ "${LATEST_RELEASE_VERSION}" == "null" ]]; then
           echo "No previous release present. Initializing based on latest ghostfolio version."
@@ -56,6 +59,7 @@ runs:
             echo "Updating ghostfolio version from $(cat ${GHOSTFOLIO_VERSION_FILE_LOCATION}) to ${CURRENT_GHOSTFOLIO_VERSION}"
             echo "${CURRENT_GHOSTFOLIO_VERSION}" > "${GHOSTFOLIO_VERSION_FILE_LOCATION}"
             echo "updatedGhostfolioVersion=true" >> "${GITHUB_ENV}"
+            echo "updatedGhostfolioVersionTag=$CURRENT_GHOSTFOLIO_VERSION" >> "${GITHUB_ENV}"
           else
             VERSION_COUNTER=$((LATEST_RELEASE_VERSION_COUNTER + 1))
             echo "updatedGhostfolioVersion=false" >> "${GITHUB_ENV}"
@@ -72,11 +76,12 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
       with:
-        commit_message: Automated Ghostfolio Version Update
+        commit_message: Automated Ghostfolio Version Update to ${{ env.updatedGhostfolioVersionTag }}
         commit_options: '--no-verify --signoff'
         file_pattern: './.ghostfolio/.version'
 
     - name: Check if tag already exists
+      if: ${{ inputs.released_docker == 'true' || env.updatedGhostfolioVersion == 'true' }}
       shell: bash
       run: |
         if [[ $(git tag -l ${{ env.RELEASE_TAG }}) ]]; then
@@ -90,6 +95,7 @@ runs:
         fi
 
     - name: Update major version tag
+      if: ${{ inputs.released_docker == 'true' || env.updatedGhostfolioVersion == 'true' }}
       shell: bash
       run: |
         MAJOR_TAG="$(echo "${{ env.RELEASE_TAG }}" | cut -d '_' -f1)"
@@ -101,6 +107,7 @@ runs:
         git push origin "${MAJOR_TAG}"
 
     - name: Create Release Changelog
+      if: ${{ inputs.released_docker == 'true' || env.updatedGhostfolioVersion == 'true' }}
       shell: bash
       run: |
         cat > release-changelog.md <<EOB
@@ -140,6 +147,7 @@ runs:
         fi
         
     - name: Create GitHub Release
+      if: ${{ inputs.released_docker == 'true' || env.updatedGhostfolioVersion == 'true' }}
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
