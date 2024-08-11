@@ -99,7 +99,8 @@ runs:
           if [[ $(cat "${GHOSTFOLIO_DOCKER_COMPOSE_SHA_FILE_LOCATION}") != "${CURRENT_SHA_GHOSTFOLIO_DOCKER_COMPOSE}" ]]; then
             echo "pushImage=false" >> "${GITHUB_ENV}"
             echo "pushImage=false" >> "${GITHUB_OUTPUT}"
-            echo "::error Remote ghostfolio docker compose file has changed. Manual review required."
+            echo "::error file=${GHOSTFOLIO_DOCKER_COMPOSE_SHA_FILE_LOCATION},line=1::Remote ghostfolio docker compose file has changed. Manual review required."
+            exit 1;
           else
             if [[ $(cat "${ANSIBLE_DOCKER_SHA_FILE_LOCATION}") != "${CURRENT_SHA_ANSIBLE_DOCKER}" ]]; then
               echo "pushImage=true" >> "${GITHUB_ENV}"
