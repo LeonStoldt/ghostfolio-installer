@@ -1,6 +1,8 @@
 ARG ANSIBLE_CORE_TAG
-FROM willhallonline/ansible:${ANSIBLE_CORE_TAG}
+FROM willhallonline/ansible:${ANSIBLE_CORE_TAG:-alpine}
 
+ARG VCS_REF
+ARG BUILD_DATE
 LABEL maintainer="tech@leon-stoldt.de" \
     org.label-schema.schema-version="1.0" \
     org.label-schema.build-date=$BUILD_DATE \
@@ -33,4 +35,4 @@ ENV JWT_SECRET=jwtSecret
 
 RUN mkdir $GHOSTFOLIO_DIR && chmod 775 /ghostfolio
 
-CMD ansible-playbook /ansible/playbooks/install-ghostfolio.yml
+CMD ["ansible-playbook", "/ansible/playbooks/install-ghostfolio.yml"]

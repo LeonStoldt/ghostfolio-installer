@@ -17,6 +17,8 @@ endef
 define docker-build
 	docker buildx build --pull \
 		--build-arg ANSIBLE_CORE_TAG=$(1) \
+		--build-arg BUILD_DATE="$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+		--build-arg VCS_REF="$(shell git rev-parse --short HEAD)" \
 		--platform $(2) \
 		-t ghostfolio-installer .
 endef
