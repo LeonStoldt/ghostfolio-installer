@@ -36,7 +36,7 @@ jobs:
       matrix:
         include:
           - platform: "amd64"
-            ansible_image_tag: "2.16-alpine-3.19"
+            ansible_image_tag: "2.16-alpine-3.19" # renovate: datasource=docker depName=willhallonline/ansible versioning=docker
           - platform: "arm64"
             ansible_image_tag: "alpine"
     permissions:
