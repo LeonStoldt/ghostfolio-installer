@@ -4,7 +4,7 @@ DEFAULT_POSTGRES_USER=ghostfolio
 
 define wait_for_container
 	@timeout=60; \
-	while ! $1; do \
+	while [ $$(docker inspect --format "{{json .State.Health.Status }}" $1) != '"healthy"' ]; do \
 		sleep 5; \
 		timeout=$$((timeout - 5)); \
 		if [ $$timeout -le 0 ]; then \
@@ -38,7 +38,7 @@ run: build
 run-with-params: build
 	docker run --rm \
 		-e POSTGRES_PORT=5433 \
-		-e REDIS_PW="OVERRIDE" \
+		-e REDIS_PW="redis_password" \
 		-e POSTGRES_DB=my-db \
 		-e POSTGRES_USER=myuser \
 		-e POSTGRES_PW=mypwforghostfolio \
@@ -50,8 +50,11 @@ run-with-params: build
 
 test: run
 	@echo "wait for redis to be healthy..."
-	$(call wait_for_container, docker exec redis-ghostfolio redis-cli ping | grep PONG > /dev/null)
+	$(call wait_for_container, redis-ghostfolio)
 	@echo "wait for postgres to be healthy..."
-	@wait-for-it localhost:5432 -t 60
+	$(call wait_for_container, postgresql16-ghostfolio)
 	@echo "wait for ghostfolio to be healthy..."
-	@wait-for-it localhost:3333 -t 60
+	$(call wait_for_container, ghostfolio)
+
+cleanup-test:
+	docker compose -f ${TEST_DIR}/docker-compose.yml down -v

@@ -26,7 +26,7 @@ COPY ansible /ansible
 # ansible variabled which can be overridden
 ENV GHOSTFOLIO_DIR=/ghostfolio
 ENV POSTGRES_PORT=5432
-ENV REDIS_PW=""
+ENV REDIS_PW="R3DIS_s3cret!"
 ENV POSTGRES_DB=ghostfolio-db
 ENV POSTGRES_USER=ghostfolio
 ENV POSTGRES_PW=postgresPw

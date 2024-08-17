@@ -1,23 +1,26 @@
-version: '3.9'
 services:
   ghostfolio:
-    image: ghostfolio/ghostfolio:latest
+    image: docker.io/ghostfolio/ghostfolio:latest
     container_name: ghostfolio
     init: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     env_file:
       - ./.env
     environment:
       - HOST_OS=Unraid
       - HOST_CONTAINERNAME=ghostfolio
       - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?err}
       - 'DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?connect_timeout=300&sslmode=prefer'
-      - NODE_ENV=production
     labels:
       - net.unraid.docker.managed=dockerman
       - 'net.unraid.docker.webui=http://[IP]:[PORT:3333]'
       - 'net.unraid.docker.icon=https://avatars.githubusercontent.com/u/82473144?s=200'
     ports:
-      - '3333:3333/tcp'
+      - 3333:3333
     depends_on:
       postgres:
         condition: service_healthy
@@ -30,9 +33,19 @@ services:
       retries: 5
 
   postgres:
-    image: 'postgres:{{ postgres_version }}-alpine'
+    image: docker.io/library/postgres:{{ postgres_version }}-alpine
     container_name: postgresql{{ postgres_version }}-ghostfolio
     hostname: postgres
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_READ_SEARCH
+      - FOWNER
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
     env_file:
       - ./.env
     environment:
@@ -45,17 +58,22 @@ services:
     ports:
       - '{{ postgres_port }}:5432/tcp'
     volumes:
-      - "ghostfolio-postgres{{ postgres_version }}-db:/var/lib/postgresql/data:rw"
+      - "ghostfolio-postgres{{ postgres_version }}-db:/var/lib/postgresql/data"
     healthcheck:
-      test: [ 'CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}' ]
+      test: ['CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}']
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
-    image: redis:alpine
+    image: docker.io/library/redis:alpine
     container_name: redis-ghostfolio
     hostname: redis
+    user: '999:1000'
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     environment:
       - TZ=Europe/Berlin
       - HOST_OS=Unraid
@@ -63,8 +81,11 @@ services:
     labels:
       - net.unraid.docker.managed=dockerman
       - 'net.unraid.docker.icon=https://raw.githubusercontent.com/juusujanar/unraid-templates/master/img/Redis-logo.png'
+    env_file:
+      - ./.env
+    command: ['redis-server', '--requirepass', $REDIS_PASSWORD]
     healthcheck:
-      test: [ 'CMD-SHELL', 'redis-cli ping | grep PONG' ]
+      test: ['CMD-SHELL', 'redis-cli --pass $REDIS_PASSWORD ping | grep PONG']
       interval: 10s
       timeout: 5s
       retries: 5
