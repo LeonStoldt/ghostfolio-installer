@@ -24,7 +24,7 @@ define docker-build
 endef
 
 build:
-	$(call docker-build,"2.16-alpine-3.19","linux/amd64") # renovate: datasource=docker depName=willhallonline/ansible versioning=docker
+	$(call docker-build,"2.17-alpine-3.19","linux/amd64") # renovate: datasource=docker depName=willhallonline/ansible versioning=docker
 
 build-arm:
 	$(call docker-build,"alpine","linux/arm64")
