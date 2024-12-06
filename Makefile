@@ -58,3 +58,6 @@ test: run
 
 cleanup-test:
 	docker compose -f ${TEST_DIR}/docker-compose.yml down -v
+
+update-ghostfolio-sha:
+	curl -s https://raw.githubusercontent.com/ghostfolio/ghostfolio/main/docker/docker-compose.yml | sha1sum > ./.ghostfolio/.docker-compose.sha
