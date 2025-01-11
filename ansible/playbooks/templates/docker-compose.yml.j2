@@ -27,6 +27,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
     healthcheck:
       test: ['CMD-SHELL', 'curl -f http://localhost:3333/api/v1/health']
       interval: 10s
@@ -60,6 +61,7 @@ services:
       - '{{ postgres_port }}:5432/tcp'
     volumes:
       - "ghostfolio-postgres{{ postgres_version }}-db:/var/lib/postgresql/data"
+    restart: unless-stopped
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}']
       interval: 10s
@@ -85,6 +87,7 @@ services:
     env_file:
       - ./.env
     command: ['redis-server', '--requirepass', $REDIS_PASSWORD]
+    restart: unless-stopped
     healthcheck:
       test: ['CMD-SHELL', 'redis-cli --pass "$REDIS_PASSWORD" ping | grep PONG']
       interval: 10s
