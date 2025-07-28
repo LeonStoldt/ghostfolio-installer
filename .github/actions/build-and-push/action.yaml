@@ -116,7 +116,7 @@ runs:
 
     - name: Commit updated sha files if present
       if: ${{ env.pushImage == 'true' }}
-      uses: stefanzweifel/git-auto-commit-action@v5
+      uses: stefanzweifel/git-auto-commit-action@v6
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
