@@ -24,7 +24,7 @@ define docker-build
 endef
 
 build:
-	$(call docker-build,"2.18-alpine-3.19","linux/amd64") # renovate: datasource=docker depName=willhallonline/ansible versioning=docker
+	$(call docker-build,"2.18-alpine-3.22","linux/amd64") # renovate: datasource=docker depName=willhallonline/ansible versioning=docker
 
 build-arm:
 	$(call docker-build,"alpine","linux/arm64")
@@ -61,3 +61,6 @@ cleanup-test:
 
 update-ghostfolio-sha:
 	curl -s https://raw.githubusercontent.com/ghostfolio/ghostfolio/main/docker/docker-compose.yml | sha1sum > ./.ghostfolio/.docker-compose.sha
+
+update-ansible-image-digest:
+	docker manifest inspect willhallonline/ansible:2.18-alpine-3.22 | jq -r 'if .manifests then .manifests[] | select(.platform.architecture == "amd64").digest else .config.digest end' > .github/ansible-docker-digests/amd64.sha
