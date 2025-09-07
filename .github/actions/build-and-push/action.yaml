@@ -41,7 +41,7 @@ runs:
       uses: actions/checkout@v5
 
     - name: Install cosign
-      uses: sigstore/cosign-installer@v3.7.0
+      uses: sigstore/cosign-installer@v3.9.2
 
     - name: Set up QEMU
       if: ${{ inputs.platform != 'amd64' }}
